@@ -41,9 +41,74 @@ print(train.info())
 print(test.info())
 
 
-# Check for Missing Value
-print('Total Train Feature with Missing Values : ', train.columns[train.isnull().sum() != 0].size)  # 0
-print('Total Test Feature with Missing Values : ', test.columns[test.isnull().sum() != 0].size)     # 0
+# Check Missing Value
+def check_missing(data):
+    nulls = data.isnull().sum(axis=0).reset_index()
+    nulls.columns = ['columns','missing']
+    nulls = nulls[nulls['missing'] > 0]
+    
+    return nulls
+
+print('Missing Values of Train set\n', check_missing(train))    # Empty DataFrame
+print('Missing Values of Test set\n', check_missing(test))      # Empty DataFrame
+
+
+# Check Data Sparsity
+def check_sparsity(data):
+    non_zeros = (data.ne(0).sum(axis=1)).sum()
+    total = data.shape[1] * data.shape[0]
+    zeros = total - non_zeros
+    sparsity = round(zeros / total * 100, 2)
+    density = round(non_zeros / total * 100, 2)
+    
+    print('Total : ', total)
+    print('Zeros : ', zeros)
+    print('Sparsity : ', sparsity)
+    print('Density : ', density)
+    
+    return density
+    
+print('Train Data Sparsity')
+train_density = check_sparsity(train)
+
+print('Test Data Sparsity')
+test_density = check_sparsity(test)
+
+
+# Check Features Type
+def check_type(data):
+    dtype = data.dtypes.reset_index()
+    dtype.columns = ['count', 'column type']
+    dtype = dtype.groupby('column type').aggregate('count').reset_index()
+    
+    return dtype
+
+dtype_train = check_type(train)
+print('Features Type of Train data\n', dtype_train)
+
+dtype_test = check_type(test)
+print('Features Type of Test data\n', dtype_test)
+
+
+# Make Metadata
+column = pd.Series(train.columns)
+dtype = pd.Series([train[x].dtype for x in train.columns])
+metadata = pd.DataFrame({'column':column, 'dtype':dtype})
+print(metadata)
+print(metadata.groupby('dtype')['dtype'].count().reset_index(name='count'))
+
+
+# Check Data Sparsity per Feature Type
+feat = metadata[(metadata.dtype == 'int64') & (metadata.column != 'ID') & (metadata.column != 'target')].column
+train_int_density = check_sparsity(train[feat])
+test_int_density = check_sparsity(test[feat])
+
+feat = metadata[(metadata.dtype == 'float64') & (metadata.column != 'ID') & (metadata.column != 'target')].column
+train_float_density = check_sparsity(train[feat])
+test_float_density = check_sparsity(test[feat])
+
+density_data = {'data':['train','test'], 'all':[train_density,test_density], 
+                'integer':[train_int_density, test_int_density], 'float':[train_float_density, test_float_density]}
 
 
 # Check for Target Variable
