@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 # Load Data
@@ -94,26 +95,66 @@ print('Features Type of Test data\n', dtype_test)
 column = pd.Series(train.columns)
 dtype = pd.Series([train[x].dtype for x in train.columns])
 metadata = pd.DataFrame({'column':column, 'dtype':dtype})
+
 print(metadata)
 print(metadata.groupby('dtype')['dtype'].count().reset_index(name='count'))
 
 
 # Check Data Sparsity per Feature Type
-feat = metadata[(metadata.dtype == 'int64') & (metadata.column != 'ID') & (metadata.column != 'target')].column
+feat = metadata[(metadata.dtype == 'int64') & \
+                (metadata.column != 'ID') & \
+                (metadata.column != 'target')].column
+                
 train_int_density = check_sparsity(train[feat])
 test_int_density = check_sparsity(test[feat])
 
-feat = metadata[(metadata.dtype == 'float64') & (metadata.column != 'ID') & (metadata.column != 'target')].column
+feat = metadata[(metadata.dtype == 'float64') & \
+                (metadata.column != 'ID') & \
+                (metadata.column != 'target')].column
+                
 train_float_density = check_sparsity(train[feat])
 test_float_density = check_sparsity(test[feat])
 
-density_data = {'data':['train','test'], 'all':[train_density,test_density], 
-                'integer':[train_int_density, test_int_density], 'float':[train_float_density, test_float_density]}
+density_data = {'data':['train','test'], 
+                'all':[train_density,test_density], 
+                'integer':[train_int_density, test_int_density], 
+                'float':[train_float_density, test_float_density]}
+
+density_data = pd.DataFrame(density_data)
+density_data.set_index('data', inplace=True)
+print(density_data)
 
 
-# Check for Target Variable
-print(train.target.min())
-print(train.target.max())
+
+# Check the Target Variable Distribution
+def check_distribution(data, feat):
+    plt.figure(figsize=(10,12))
+    plt.subplot(211)
+    plt.title('Distribution of %s' %feat)
+    sns.distplot(data, kde=True, bins=100)
+    
+    plt.subplot(212)
+    plt.title('Distribution of log(%s)' %feat)
+    sns.distplot(np.log(data+1), kde=True, bins=100)
+    plt.show()
+
+check_distribution(train['target'], 'target')
+
+
+# Check the distribution of the number of non-zero features per row
+non_zeros = (train.ne(0).sum(axis=1))
+check_distribution(non_zeros, 'the number of non-zero features per row')
+
+non_zeros = (test.ne(0).sum(axis=1))
+check_distribution(non_zeros, 'the number of non_zero features per row')
+
+
+# Check the distribution of the number of non-zero features per column
+non_zeros = (train.ne(0).sum(axis=0))
+check_distribution(non_zeros, 'the number of non_zero features per column')
+
+non_zeros = (test.ne(0).sum(axis=0))
+check_distribution(non_zeros, 'the number of non_zero features per column')
 
 
 # Check for Correlation
