@@ -25,8 +25,7 @@ def RMSLE(real, pred):
 
 def check_important_features(feature_importances_, features):
     important_features = pd.Series(feature_importances_, index=features)
-    important_features = important_features.loc[important_features > 0].nlargest(100)
-        
+    important_features = important_features.loc[important_features > 0].nlargest(100)        
     return important_features
 
 
