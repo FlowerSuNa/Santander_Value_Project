@@ -100,7 +100,7 @@ print(metadata)
 print(metadata.groupby('dtype')['dtype'].count().reset_index(name='count'))
 
 
-# Check Data Sparsity per Feature Type
+# Check the Data Sparsity per Feature Type
 feat = metadata[(metadata.dtype == 'int64') & \
                 (metadata.column != 'ID') & \
                 (metadata.column != 'target')].column

@@ -11,13 +11,13 @@ train = pd.read_csv('train.csv')
 test = pd.read_csv('test.csv')
 
 
-# 
+# make a log of the target
 Y = train.target
 Y = np.log(Y+1)
 Y.to_csv('train_target.csv',index=False)
 
 
-# Divid Data
+# Remove 'ID' and 'target' features
 train = train.drop(['ID','target'], axis=1)
 test = test.drop('ID', axis=1)
 print(train.shape)

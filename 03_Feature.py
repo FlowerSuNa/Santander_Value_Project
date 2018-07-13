@@ -32,7 +32,7 @@ def lgbm(X_train, X_val, y_train, y_val, test_data):
             'metric': 'rmse',
             'num_leaves': 40,
             'learning_rate': 0.005,
-            'bagging_fraction': 0.7,
+            'bagging_fraction': 0.6,
             'featrue_fraction': 0.6,
             'bagging_frequency': 6,
             'bagging_seed': 0,
@@ -40,14 +40,14 @@ def lgbm(X_train, X_val, y_train, y_val, test_data):
             'seed':0
             }
     
-    train = lgb.Dataset(X_train, label=y_train)
-    valid = lgb.Dataset(X_val, label=y_val)
+    train = lgb.Dataset(X_train.values, label=y_train.values, feature_name=list(X_train.columns))
+    valid = lgb.Dataset(X_val.values, label=y_val.values, feature_name=list(X_train.columns))
     
     evals_result = {}
     
     model = lgb.train(params, train, 5000,
                       valid_sets=[train,valid],
-                      # valid_names=['train','valid'],
+                      valid_names=['train','valid'],
                       # num_boost_round=1000,
                       early_stopping_rounds=50,
                       verbose_eval=150,
@@ -88,11 +88,8 @@ print('y_train size : ', y_train.shape)
 print('y_val size : ', y_val.shape)
 
 
-X_train.columns
-y_train.mode
-
 #
 # https://www.kaggle.com/samratp/lightgbm-xgboost-catboost
-lgb_pred = lgbm(X_train, X_val, y_train, y_val, test)
+lgb_pred, result, boost = lgbm(X_train, X_val, y_train, y_val, test)
 
 
