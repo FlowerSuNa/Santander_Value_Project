@@ -21,7 +21,7 @@ def RMSLE(real, pred):
 
 
 # Load Data
-train = pd.read_csv('train_remove_constant.csv')
+train = pd.read_csv('train_use_feat_90.csv')
 target = pd.read_csv('train_target.csv', header=None)
 
 
@@ -55,25 +55,35 @@ for feat in train.columns:
     
     model = lgb.train(params, train_set, 5000,
                       valid_sets=[train_set,valid_set],
-                      early_stopping_rounds=50,
+                      early_stopping_rounds=100,
                       verbose_eval=10)
     
     real = np.exp(y_train) - 1
-    pred = model.predict(X_train, num_iteration=model.best_iteration)
+    pred = model.predict(X_train[[feat]], num_iteration=model.best_iteration)
     pred = np.exp(pred) - 1
     
     rmsle = RMSLE(real, pred)
     print('RMSLE of Train data : ', rmsle)
     
     real = np.exp(y_val) - 1
-    pred = model.predict(X_val, num_iteration=model.best_iteration)
+    pred = model.predict(X_val[[feat]], num_iteration=model.best_iteration)
     pred = np.exp(pred) - 1
     
     rmsle = RMSLE(real, pred)
     print('RMSLE of Test data : ', rmsle) 
 
-    scores.append((feat,rmsle))
-    
+    scores.append((feat, round(rmsle,5)))
+
+features = pd.DataFrame(scores, columns=['feature','rmsle']).set_index('feature')
+features = features.sort_values(ascending=True, by='rmsle')
+
+print(features.head(10))
+print(features.tail(10))
+
+
+
+
+# https://www.kaggle.com/ogrellier/feature-scoring-vs-zeros
 
 
 # Feature Scoring using XGBoost
