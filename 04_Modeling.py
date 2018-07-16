@@ -18,8 +18,8 @@ submission = pd.read_csv('sample_submission.csv')
 
 # Define Functions
 def RMSLE(real, pred):
-    r = [np.log(x+1) for x in real]
-    p = [np.log(x+1) for x in pred]
+    r = np.log1p(real)
+    p = np.log1p(pred)
     
     rmsle = (np.sum(np.subtract(p, r) ** 2) / len(pred)) ** 0.5
     return rmsle

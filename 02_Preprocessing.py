@@ -40,7 +40,7 @@ train.to_csv('train_remove_constant.csv', index=False)
 test.to_csv('test_remove_constant.csv', index=False)
 
 
-# 
+# Check the percent of zero per column
 total = (train == 0).sum().sort_values(ascending=False)
 percent = ((train == 0).sum() / (train == 0).count() * 100).sort_values(ascending=False)
 feat = pd.concat([total, percent], axis=1, keys=['Total','Percent'])

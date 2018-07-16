@@ -13,8 +13,8 @@ import catboost as ctb
 
 # Define Functions
 def RMSLE(real, pred):
-    r = [np.log(x+1) for x in real]
-    p = [np.log(x+1) for x in pred]
+    r = np.log1p(real)
+    p = np.log1p(pred)
     
     rmsle = (np.sum(np.subtract(p, r) ** 2) / len(pred)) ** 0.5
     return rmsle
@@ -58,20 +58,18 @@ for feat in train.columns:
     model = lgb.train(params, train_set, 5000,
                       valid_sets=[train_set,valid_set],
                       early_stopping_rounds=100,
-                      verbose_eval=500)
+                      verbose_eval=1000)
     
     # Add Scores
-    real = np.exp(y_train) - 1
-    pred = model.predict(X_train[[feat]], num_iteration=model.best_iteration)
-    pred = np.exp(pred) - 1    
+    real = np.expm1(y_train)
+    pred = np.expm1(model.predict(X_train[[feat]], num_iteration=model.best_iteration))   
     train_rmsle = RMSLE(real, pred)
     
-    real = np.exp(y_val) - 1
-    pred = model.predict(X_val[[feat]], num_iteration=model.best_iteration)
-    pred = np.exp(pred) - 1    
-    test_rmsle = RMSLE(real, pred)
+    real = np.expm1(y_val)
+    pred = np.expm1(model.predict(X_val[[feat]], num_iteration=model.best_iteration))
+    valid_rmsle = RMSLE(real, pred)
 
-    scores.append((feat, round(test_rmsle, 5), round(train_rmsle - test_rmsle, 5)))
+    scores.append((feat, round(valid_rmsle, 5), round(train_rmsle - valid_rmsle, 5)))
 
 
 # Make the Result Dataset
@@ -123,19 +121,87 @@ for feat in train.columns:
     
     
     # Add Scores
-    test_set = xgb.DMatrix(X_train[[feat]])
+    dset = xgb.DMatrix(X_train[[feat]].values)
     
-    real = np.exp(y_train) - 1
-    pred = model.predict(test_set, ntree_limit=model.best_ntree_limit)
-    pred = np.exp(pred) - 1    
+    real = np.expm1(y_train)
+    pred = np.expm1(model.predict(dset, ntree_limit=model.best_ntree_limit))   
     train_rmsle = RMSLE(real, pred)
     
-    test_set = xgb.DMatrix(X_val[[feat]])
+    dset = xgb.DMatrix(X_val[[feat]].values)
     
-    real = np.exp(y_val) - 1
-    pred = model.predict(test_set, ntree_limit=model.best_ntree_limit)
-    pred = np.exp(pred) - 1    
-    test_rmsle = RMSLE(real, pred)
+    real = np.expm1(y_val)
+    pred = np.expm1(model.predict(dset, ntree_limit=model.best_ntree_limit))
+    valid_rmsle = RMSLE(real, pred)
 
-    scores.append((feat, round(test_rmsle, 5), round(train_rmsle - test_rmsle, 5)))
+    scores.append((feat, round(valid_rmsle, 5), round(train_rmsle - valid_rmsle, 5)))
+    
 
+# Make the Result Dataset
+features = pd.DataFrame(scores, columns=['feature','rmsle','sub']).set_index('feature')
+features = features.sort_values(ascending=True, by='rmsle')
+
+
+# Check the Result
+print(features.head(10))
+print(features.tail(10))
+
+print(features.loc[features['sub'] > 0.03])
+print(features.loc[features['sub'] < 0.03])
+print(features.loc[features['sub'] < 0.001])
+print(features.loc[features['sub'] < 0])
+
+
+# Save the Result
+features.to_csv('feature_scoring/feature_scoring_XGB.csv')
+
+
+# ------------------------------------ Feature Scoring using CatBoost ------------------------------------
+scores = []
+
+
+for feat in train.columns:
+    model = ctb.CatBoostRegressor(iterations = 500,
+                                  learning_rate=0.05,
+                                  depth=10,
+                                  eval_metric='RMSE',
+                                  random_seed=0,
+                                  bagging_temperature=0.2,
+                                  od_type='Iter',
+                                  metric_period=50,
+                                  od_wait=20)
+    
+    model.fit(X_train, y_train,
+              eval_set=(X_val, y_val),
+              use_best_model=True,
+              verbose=True)
+    
+
+    # Add Scores
+    real = np.expm1(y_train)
+    pred = np.expm1(model.predict(X_train))
+    train_rmsle = RMSLE(real, pred)
+    
+    real = np.expm1(y_val)
+    pred = np.expm1(model.predict(X_val))
+    valid_rmsle = RMSLE(real, pred)
+
+    scores.append((feat, round(valid_rmsle, 5), round(train_rmsle - valid_rmsle, 5)))
+
+
+# Make the Result Dataset
+features = pd.DataFrame(scores, columns=['feature','rmsle','sub']).set_index('feature')
+features = features.sort_values(ascending=True, by='rmsle')
+
+
+# Check the Result
+print(features.head(10))
+print(features.tail(10))
+
+print(features.loc[features['sub'] > 0.03])
+print(features.loc[features['sub'] < 0.03])
+print(features.loc[features['sub'] < 0.001])
+print(features.loc[features['sub'] < 0])
+
+
+# Save the Result
+features.to_csv('feature_scoring/feature_scoring_CTB.csv')
