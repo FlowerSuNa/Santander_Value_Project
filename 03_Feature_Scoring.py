@@ -88,7 +88,7 @@ print(features.loc[features['sub'] < 0])
 
 
 # Save the Result
-features.to_csv('feature_scoring/feature_scoring_LGBM.csv')
+features.to_csv('feature_scoring/feature_scoring_LGB.csv')
 
 
 # ------------------------------------ Feature Scoring using XGBoost ------------------------------------
@@ -175,7 +175,7 @@ for feat in train.columns:
               use_best_model=True,
               verbose=True)
     
-
+    
     # Add Scores
     real = np.expm1(y_train)
     pred = np.expm1(model.predict(X_train))
@@ -184,7 +184,7 @@ for feat in train.columns:
     real = np.expm1(y_val)
     pred = np.expm1(model.predict(X_val))
     valid_rmsle = RMSLE(real, pred)
-
+    
     scores.append((feat, round(valid_rmsle, 5), round(train_rmsle - valid_rmsle, 5)))
 
 
@@ -205,3 +205,9 @@ print(features.loc[features['sub'] < 0])
 
 # Save the Result
 features.to_csv('feature_scoring/feature_scoring_CTB.csv')
+
+
+# ------------------------------------ Feature Selection ------------------------------------
+LGB = pd.read_csv('feature_scoring/feature_scoring_LGB.csv')
+XGB = pd.read_csv('feature_scoring/feature_scoring_XGB.csv')
+CTB = pd.read_csv('feature_scoring/feature_scoring_CTB.csv')
