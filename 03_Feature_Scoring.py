@@ -145,11 +145,6 @@ features = features.sort_values(ascending=True, by='rmsle')
 print(features.head(10))
 print(features.tail(10))
 
-print(features.loc[features['sub'] > 0.03])
-print(features.loc[features['sub'] < 0.03])
-print(features.loc[features['sub'] < 0.001])
-print(features.loc[features['sub'] < 0])
-
 
 # Save the Result
 features.to_csv('feature_scoring/feature_scoring_XGB.csv')
@@ -170,19 +165,19 @@ for feat in train.columns:
                                   metric_period=50,
                                   od_wait=20)
     
-    model.fit(X_train, y_train,
-              eval_set=(X_val, y_val),
+    model.fit(X_train[[feat]], y_train,
+              eval_set=(X_val[[feat]], y_val),
               use_best_model=True,
               verbose=True)
     
     
     # Add Scores
     real = np.expm1(y_train)
-    pred = np.expm1(model.predict(X_train))
+    pred = np.expm1(model.predict(X_train[[feat]]))
     train_rmsle = RMSLE(real, pred)
     
     real = np.expm1(y_val)
-    pred = np.expm1(model.predict(X_val))
+    pred = np.expm1(model.predict(X_val[[feat]]))
     valid_rmsle = RMSLE(real, pred)
     
     scores.append((feat, round(valid_rmsle, 5), round(train_rmsle - valid_rmsle, 5)))
@@ -197,11 +192,6 @@ features = features.sort_values(ascending=True, by='rmsle')
 print(features.head(10))
 print(features.tail(10))
 
-print(features.loc[features['sub'] > 0.03])
-print(features.loc[features['sub'] < 0.03])
-print(features.loc[features['sub'] < 0.001])
-print(features.loc[features['sub'] < 0])
-
 
 # Save the Result
 features.to_csv('feature_scoring/feature_scoring_CTB.csv')
@@ -211,3 +201,33 @@ features.to_csv('feature_scoring/feature_scoring_CTB.csv')
 LGB = pd.read_csv('feature_scoring/feature_scoring_LGB.csv')
 XGB = pd.read_csv('feature_scoring/feature_scoring_XGB.csv')
 CTB = pd.read_csv('feature_scoring/feature_scoring_CTB.csv')
+
+
+features = pd.merge(LGB, XGB, on='feature', how='outer')
+features = features.merge(CTB, on='feature', how='outer')
+
+
+features.columns = ['feature','rmsle_lgb','sub_lgb','rmsle_xgb','sub_xgb','rmsle_ctb','sub_ctb']
+
+print(features.head(10))
+print(features.tail(10))
+
+
+features['rmsle_mean'] = features[['rmsle_lgb','rmsle_xgb','rmsle_ctb']].mean(axis=1)
+features['sub_mean'] = features[['sub_lgb','sub_xgb','sub_ctb']].mean(axis=1)
+
+print(features.head(10))
+print(features.tail(10))
+
+
+features = features.sort_values(ascending=True, by='rmsle_mean')
+print(features.head(20))
+
+
+features.to_csv('feature_scoring/feature_scoring.csv', index=False)
+features = pd.read_csv('feature_scoring/feature_scoring.csv')
+
+
+print(features.loc[features['sub_mean'] < 0.03])
+print(features.loc[features['sub_mean'] < 0.02])
+
