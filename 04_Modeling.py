@@ -269,6 +269,12 @@ submission['target'] = lgb_pred
 submission.to_csv('feature_scoring_lgb_pred.csv', index=False)
 
 
+# ------------------------------------------- Feature Scoring --------------------------------------------
+
+
+
+
+
 # ----------------------------------------------------------------------------------------------
 # Load Data
 train = pd.read_csv('train_pca_100.csv')
