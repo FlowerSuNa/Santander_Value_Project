@@ -9,10 +9,12 @@ train = pd.read_csv('train.csv')
 test = pd.read_csv('test.csv')
 
 
-# make a log of the target
+# Store the target
 Y = train.target
+Y.to_csv('train_target.csv', index=False)
+
 Y = np.log(Y+1)
-Y.to_csv('train_target.csv',index=False)
+Y.to_csv('train_target_log.csv',index=False)
 
 
 # Remove 'ID' and 'target' features
@@ -46,7 +48,7 @@ print(feat.head(50))
 print(feat.tail(50))
 
 
-#
+# Check for sparsity less than 90
 use_feat = feat[feat.Percent < 90]
 print(use_feat.shape)
 
@@ -55,11 +57,11 @@ test2 = test[use_feat.index]
 print(train2.columns)
 print(test2.columns)
 
-train2.to_csv('train_use_feat_90.csv', index=False)
-test2.to_csv('test_use_feat_90.csv', index=False)
+train2.to_csv('train_sparsity_90.csv', index=False)
+test2.to_csv('test_sparsity_90.csv', index=False)
 
 
-#
+# Check for sparsity less than 80
 use_feat = feat[feat.Percent < 80]
 print(use_feat.shape)
 
@@ -68,11 +70,11 @@ test2 = test[use_feat.index]
 print(train2.columns)
 print(test2.columns)
 
-train2.to_csv('train_use_feat_80.csv', index=False)
-test2.to_csv('test_use_feat_80.csv', index=False)
+train2.to_csv('train_sparsity_80.csv', index=False)
+test2.to_csv('test_sparsity_80.csv', index=False)
 
 
-#
+# Check for sparsity less than 70
 use_feat = feat[feat.Percent < 70]
 print(use_feat.shape)
 
@@ -81,5 +83,5 @@ test2 = test[use_feat.index]
 print(train2.columns)
 print(test2.columns)
 
-train2.to_csv('train_use_feat_70.csv', index=False)
-test2.to_csv('test_use_feat_70.csv', index=False)
+train2.to_csv('train_sparsity_70.csv', index=False)
+test2.to_csv('test_sparsity_70.csv', index=False)
