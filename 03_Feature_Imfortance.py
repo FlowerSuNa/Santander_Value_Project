@@ -2,17 +2,13 @@
 # Import Library
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 from sklearn.model_selection import train_test_split
 import lightgbm as lgb
-import xgboost as xgb
-import catboost as ctb
 
 
 # Load Data
-target = pd.read_csv('train_target.csv', header=None)
+target = pd.read_csv('train_target_log.csv', header=None)
 submission = pd.read_csv('sample_submission.csv')
 
 
@@ -43,7 +39,7 @@ def lgbm(train_data, test_data, target):
     print('y_val size : ', y_val.shape)
     
     
-    #
+    # Set a Parameter
     params = {
             'objective': 'regression',
             'metric': 'rmse',
@@ -57,6 +53,8 @@ def lgbm(train_data, test_data, target):
             'seed':0
             }
     
+    
+    # Train a model
     train = lgb.Dataset(X_train, label=y_train)
     valid = lgb.Dataset(X_val, label=y_val)
     
@@ -69,25 +67,21 @@ def lgbm(train_data, test_data, target):
                       evals_result=evals_result)
     
     
-    #
-    real = np.exp(y_train) - 1
-    pred = model.predict(X_train, num_iteration=model.best_iteration)
-    pred = np.exp(pred) - 1
-    
+    # Evaluate the model
+    real = np.expm1(y_train)
+    pred = np.expm1(model.predict(X_train, num_iteration=model.best_iteration))
     rmsle = RMSLE(real, pred)
     print('RMSLE of Train data : ', rmsle)
     
-    real = np.exp(y_val) - 1
-    pred = model.predict(X_val, num_iteration=model.best_iteration)
-    pred = np.exp(pred) - 1
-    
+    real = np.expm1(y_val)
+    pred = np.expm1(model.predict(X_val, num_iteration=model.best_iteration))
     rmsle = RMSLE(real, pred)
-    print('RMSLE of Test data : ', rmsle) 
+    print('RMSLE of Valid data : ', rmsle) 
     
     
-    #
+    # Predict Target
     pred = model.predict(test_data, num_iteration=model.best_iteration)
-    pred = np.exp(pred) - 1
+    pred = np.expm1(pred)
     
     return pred, evals_result, model
 
@@ -99,176 +93,95 @@ test = pd.read_csv('test_remove_constant.csv')
 
 
 # Train a Model
-lgb_pred, result, LGBM = lgbm(train, test, target[0])   # Overfitting
+lgb_pred, result, LGBM = lgbm(train, test, target[0])
 
 
 # Find Important Features
 features = important_features(LGBM)
+features.drop(features[features['split'] == 0].index, inplace=True, axis=0)
+
 print(features.head(20))    
+print(features.tail(20))
 
 features.to_csv('feature_importance/LGBM_remove_constant.csv', index=False)
 
 
-# ------------------------------------------ #
-# Remove 'f190486d6' Feature to decrease Overftiting
-train2 = train.drop(features['feature'].iloc[0], axis=1)
-test2 = test.drop(features['feature'].iloc[0], axis=1)
+# ----------------------------------------------------------------------------------------------
+# Load Data
+train = pd.read_csv('train_sparsity_90.csv')
+test = pd.read_csv('test_sparsity_90.csv')
 
 
 # Train a Model
-lgb_pred, result, LGBM = lgbm(train2, test2, target[0])     # Decrease Overftiting
+# --- train : 0.98985
+# --- valid : 1.40980
+lgb_pred, result, LGBM = lgbm(train, test, target[0])
 
 
 # Find Important Features
 features = important_features(LGBM)
+features.drop(features[features['split'] == 0].index, inplace=True, axis=0)
+
 print(features.head(20))    
+print(features.tail(20))  
 
-features.to_csv('feature_importance/LGBM_remove_constant_remove1.csv', index=False)
+features.to_csv('feature_importance/LGBM_sparsity_90.csv', index=False)
 
 
-# ------------------------------------------ #
-# Remove '15ace8c9f' Feature
-train3 = train2.drop(features['feature'].iloc[2], axis=1)
-test3 = test2.drop(features['feature'].iloc[2], axis=1)
+# ----------------------------------------------------------------------------------------------
+# Load Data
+train = pd.read_csv('train_sparsity_80.csv')
+test = pd.read_csv('test_sparsity_80.csv')
 
 
 # Train a Model
-lgb_pred, result, LGBM = lgbm(train3, test3, target[0])     # Decrease Overftiting
+# --- train : 1.13595
+# --- valid : 1.43989
+lgb_pred, result, LGBM = lgbm(train, test, target[0])
 
 
 # Find Important Features
 features = important_features(LGBM)
+features.drop(features[features['split'] == 0].index, inplace=True, axis=0)
+
 print(features.head(20))    
+print(features.tail(20))  
 
-features.to_csv('feature_importance/LGBM_remove_constant_remove1.csv', index=False)
-
+features.to_csv('feature_importance/LGBM_sparsity_80.csv', index=False)
 
 
 # ----------------------------------------------------------------------------------------------
 # Load Data
-train = pd.read_csv('train_use_feat_90.csv')
-test = pd.read_csv('test_use_feat_90.csv')
+train = pd.read_csv('train_sparsity_70.csv')
+test = pd.read_csv('test_sparsity_70.csv')
 
 
 # Train a Model
-lgb_pred, result, LGBM = lgbm(train, test, target[0])   # Overfitting
+# --- train : 1.10235
+# --- valid : 1.44254
+lgb_pred, result, LGBM = lgbm(train, test, target[0])
 
 
 # Find Important Features
 features = important_features(LGBM)
+features.drop(features[features['split'] == 0].index, inplace=True, axis=0)
+
 print(features.head(20))    
+print(features.tail(20))  
 
-features.to_csv('feature_importance/LGBM_use_feat_90.csv', index=False)
-
-
-# ------------------------------------------ #
-# Remove 'f190486d6' Feature to decrease Overftiting
-train2 = train.drop(features['feature'].iloc[0], axis=1)
-test2 = test.drop(features['feature'].iloc[0], axis=1)
-
-
-# Train a Model
-lgb_pred, result, LGBM = lgbm(train2, test2, target[0])     # Decrease Overftiting
-
-
-# Find Important Features
-features = important_features(LGBM)
-print(features.head(20))    
-
-features.to_csv('feature_importance/LGBM_use_feat_90_remove1.csv', index=False)
-
-
-
-
-submission['target'] = lgb_pred
-submission.to_csv('lgb_90_pred.csv', index=False)
+features.to_csv('feature_importance/LGBM_sparsity_70.csv', index=False)
 
 
 # ----------------------------------------------------------------------------------------------
-# Load Data
-train = pd.read_csv('train_use_feat_80.csv')
-test = pd.read_csv('test_use_feat_80.csv')
+#
+f1 = pd.read_csv('feature_importance/LGBM_remove_constant.csv')
+f2 = pd.read_csv('feature_importance/LGBM_sparsity_90.csv')
+f3 = pd.read_csv('feature_importance/LGBM_sparsity_80.csv')
+f4 = pd.read_csv('feature_importance/LGBM_sparsity_70.csv')
 
 
-
-# Divid Data
-X_train, X_val, y_train, y_val = train_test_split(train, target[0], test_size=0.2, random_state=0)
-print('X_train size : ', X_train.shape)
-print('X_val size : ', X_val.shape)
-print('y_train size : ', y_train.shape)
-print('y_val size : ', y_val.shape)
-
-
-# Train the Model
-lgb_pred, result, boost = lgbm(X_train, X_val, y_train, y_val, test)
-submission['target'] = lgb_pred
-submission.to_csv('lgb_80_pred.csv', index=False)
-
-
-# ----------------------------------------------------------------------------------------------
-# Load Data
-train = pd.read_csv('train_use_feat_70.csv')
-test = pd.read_csv('test_use_feat_70.csv')
-
-
-
-# Divid Data
-X_train, X_val, y_train, y_val = train_test_split(train, target[0], test_size=0.2, random_state=0)
-print('X_train size : ', X_train.shape)
-print('X_val size : ', X_val.shape)
-print('y_train size : ', y_train.shape)
-print('y_val size : ', y_val.shape)
-
-
-# Train the Model
-lgb_pred, result, boost = lgbm(X_train, X_val, y_train, y_val, test)
-submission['target'] = lgb_pred
-submission.to_csv('lgb_70_pred.csv', index=False)
-
-
-# ----------------------------------------------------------------------------------------------
-# Load Data
-train = pd.read_csv('train_feature_scoring_LGBM_log.csv')
-test = pd.read_csv('test_use_feat_70.csv')
-
-
-
-# Divid Data
-X_train, X_val, y_train, y_val = train_test_split(train, target[0], test_size=0.2, random_state=0)
-print('X_train size : ', X_train.shape)
-print('X_val size : ', X_val.shape)
-print('y_train size : ', y_train.shape)
-print('y_val size : ', y_val.shape)
-
-
-# Train the Model
-lgb_pred, result, boost = lgbm(X_train, X_val, y_train, y_val, test)
-submission['target'] = lgb_pred
-submission.to_csv('lgb_70_pred.csv', index=False)
-
-
-# ----------------------------------------------------------------------------------------------
-# Load Data
-train = pd.read_csv('train_feature_scoring_LGBM_log.csv')
-test = pd.read_csv('test_use_feat_90.csv')
-
-test = test[train.columns]
-test = np.log1p(test)
-
-
-
-# Divid Data
-X_train, X_val, y_train, y_val = train_test_split(train, target[0], test_size=0.2, random_state=0)
-print('X_train size : ', X_train.shape)
-print('X_val size : ', X_val.shape)
-print('y_train size : ', y_train.shape)
-print('y_val size : ', y_val.shape)
-
-
-# Train the Model
-lgb_pred, result, boost = lgbm(X_train, X_val, y_train, y_val, test)
-submission['target'] = lgb_pred
-submission.to_csv('feature_scoring_lgb_pred.csv', index=False)
-
-
-
+#
+print(f1.head(10))
+print(f2.head(10))
+print(f3.head(10))
+print(f4.head(10))
